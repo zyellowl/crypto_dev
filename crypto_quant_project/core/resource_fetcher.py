@@ -16,12 +16,6 @@ class ResourceFetcher:
             self.news_api_key = None
         self.news_base_url = 'https://newsapi.org/v2/everything'
 
-        # Nitter configuration
-        if 'Nitter' in self.config:
-            self.nitter_instance = self.config['Nitter'].get('NITTER_INSTANCE_URL', 'https://nitter.net')
-        else:
-            self.nitter_instance = 'https://nitter.net'
-
         # Reddit client
         if 'Reddit' in self.config and self.config['Reddit'].get('REDDIT_CLIENT_ID'):
             try:
@@ -52,27 +46,23 @@ class ResourceFetcher:
             return []
 
     def fetch_nitter_rss(self, usernames):
-        """Fetches tweets for a list of usernames using a Nitter RSS feed."""
+        """Fetches tweets for a list of usernames using a Nitter RSS feed (deprecated, kept for compatibility)."""
         all_tweets = []
         for username in usernames:
             if not username.strip():
                 continue
-            rss_url = f"{self.nitter_instance}/{username}/rss"
-            try:
-                print(f"Fetching RSS feed for @{username} from {rss_url}...")
-                feed = feedparser.parse(rss_url)
-                if feed.bozo:
-                    # Bozo bit is set if the feed is malformed.
-                    raise Exception(feed.bozo_exception)
-                
-                for entry in feed.entries:
-                    all_tweets.append({
-                        'source': f'Twitter RSS (@{username})',
-                        'text': entry.title,
-                        'url': entry.link
-                    })
-            except Exception as e:
-                print(f"Error fetching or parsing RSS feed for @{username}: {e}")
+            # 推荐直接用RSSHub
+            print(f"[WARN] fetch_nitter_rss建议用RSSHub替代。当前username: {username}")
+            # 可选：兼容老接口，直接用RSSHub
+            rsshub_url = f"http://localhost:1200/twitter/user/{username}"
+            fetcher = RssHubTwitterFetcher(rsshub_url)
+            tweets = fetcher.fetch()
+            for t in tweets:
+                all_tweets.append({
+                    'source': f'RSSHub (@{username})',
+                    'text': f"{t['title']} {t['summary']}",
+                    'url': t['url']
+                })
         return all_tweets
 
     def fetch_reddit_posts(self, subreddits, limit=5):
