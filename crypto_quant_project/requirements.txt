@@ -1,0 +1,9 @@
+ccxt
+pandas
+numpy
+requests
+configparser
+textblob
+praw
+openai
+feedparser 
