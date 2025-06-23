@@ -51,8 +51,7 @@ class ResourceFetcher:
         for username in usernames:
             if not username.strip():
                 continue
-            # 推荐直接用RSSHub
-            print(f"[WARN] fetch_nitter_rss建议用RSSHub替代。当前username: {username}")
+            print(f"[WARN]当前username: {username}")
             # 可选：兼容老接口，直接用RSSHub
             rsshub_url = f"http://localhost:1200/twitter/user/{username}"
             fetcher = RssHubTwitterFetcher(rsshub_url)
@@ -61,7 +60,8 @@ class ResourceFetcher:
                 all_tweets.append({
                     'source': f'RSSHub (@{username})',
                     'text': f"{t['title']} {t['summary']}",
-                    'url': t['url']
+                    'url': t['url'],
+                    'published': t.get('published', '')
                 })
         return all_tweets
 
@@ -91,40 +91,3 @@ class ResourceFetcher:
         fetcher = RssHubTwitterFetcher(rsshub_url)
         return fetcher.fetch(max_items=max_items)
 
-if __name__ == '__main__':
-    # Example Usage
-    import os
-    config_path = '../config.ini'
-    if not os.path.exists(config_path):
-        print("Cannot run example without a config file.")
-    else:
-        fetcher = ResourceFetcher(config_file=config_path)
-
-        # 1. Fetch news (if configured)
-        print("\n--- Fetching News ---")
-        news_articles = fetcher.fetch_news('bitcoin', page_size=2)
-        if news_articles:
-            print(f"Fetched {len(news_articles)} news articles.")
-            print(news_articles[0])
-
-        # 2. Fetch Tweets via Nitter RSS
-        print("\n--- Fetching Tweets via Nitter RSS ---")
-        twitter_usernames = fetcher.config.get('Nitter', 'TWITTER_USERNAMES', fallback='').split(',')
-        if twitter_usernames and twitter_usernames[0]:
-            tweets = fetcher.fetch_nitter_rss(twitter_usernames)
-            if tweets:
-                print(f"Fetched {len(tweets)} tweets.")
-                print(tweets[0])
-        else:
-            print("No Twitter usernames configured in config.ini under [Nitter].")
-
-        # 3. Fetch Reddit posts (if configured)
-        print("\n--- Fetching Reddit Posts ---")
-        subreddits = fetcher.config.get('Trading', 'REDDIT_SUBREDDITS', fallback='').split(',')
-        if subreddits and subreddits[0] and fetcher.reddit_client:
-            posts = fetcher.fetch_reddit_posts(subreddits, limit=1)
-            if posts:
-                print(f"Fetched {len(posts)} Reddit posts.")
-                print(posts[0])
-        else:
-            print("Reddit client not configured or no subreddits specified.")
